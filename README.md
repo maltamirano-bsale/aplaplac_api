@@ -1,4 +1,4 @@
-# aplaplac_api
+# APLAPLAC REST API
 Rest Api desarrollada en NodeJS 
 
 # PASO 1
