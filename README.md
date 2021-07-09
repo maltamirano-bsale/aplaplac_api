@@ -19,3 +19,7 @@ Si la conexion es correcta, debe mostrar el siguiente mensaje:
 Server on port  3000
 Database connection successful
 
+# SUPER IMPORTANTE !
+- Antes de empezar a desarrollar, deberan crear una nueva rama con el comando 'git branch rama_ejemplo'
+- Luego deberan cambiarse a dicha rama con el comando 'git checkout rama_ejemplo'
+
