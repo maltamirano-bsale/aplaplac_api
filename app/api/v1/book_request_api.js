@@ -97,4 +97,70 @@ router.post('/book_request', (req, res) =>{
     }
 });
 
+router.get('/book_request/valid/:id_usuario', (req, res) =>{
+    try {   
+        let query = '';
+
+        id_usuario = req.params['id_usuario'];
+
+        query =`SELECT tu.T_OCUPACION
+                FROM usuario AS us
+                JOIN tipo_usuario AS tu ON tu.ID_TIPO_USUARIO = us.ID_TIPO_USUARIO
+                WHERE us.ID_USUARIO = ${id_usuario}`;
+
+        mysqlConnection.query(query, (err, rows) =>{
+            if(!err){
+                console.log(rows);
+                if(rows.length > 0 ){
+                    if(rows[0]['T_OCUPACION'] == 'ALUMNO'){
+
+                        query =`SELECT al.ID_ALUMNO, al.ID_ESTADO_MATRICULA
+                                FROM registro_biblioteca AS rb
+                                JOIN alumno as al ON al.ID_USUARIO = rb.ID_USUARIO
+                                WHERE rb.ID_USUARIO = ${id_usuario}`
+    
+                        mysqlConnection.query(query, (err, rows) =>{
+                            if(!err){
+    
+                                if(rows[0]['ID_ESTADO_MATRICULA'] == 1){
+                                    res.json({'code': 200, 'alumno_validado': true});
+                                }
+                                else{
+                                    res.json({'code': 200, 'alumno_validado': false});
+                                }
+                            }
+                        });
+                    }
+                    else{
+                        query =`SELECT *
+                                FROM registro_biblioteca AS rb
+                                WHERE rb.ID_USUARIO = ${id_usuario}`
+    
+                        mysqlConnection.query(query, (err, rows) =>{
+                            if(!err){
+    
+                                if(rows.length > 0){
+                                    res.json({'code': 200, 'usuario_validado': true});
+                                }
+                                else{
+                                    res.json({'code': 200, 'usuario_validado': false});
+                                }
+                                            
+                            }
+                        });
+                    } 
+                }
+                else{
+                    res.json({'code': 400, 'error':'Usuario no encontrado'});
+                }                
+            }
+            else{
+                res.json({'code': 400, 'error':err});
+            }          
+        });
+    } catch (error) {
+        console.log(error)
+    }
+});
+
 module.exports = router;
