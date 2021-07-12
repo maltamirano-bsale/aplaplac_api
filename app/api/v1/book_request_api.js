@@ -3,18 +3,10 @@ const router = express.Router();
 const mysqlConnection = require('../../../config/database');
 
 //Definicion de rutas
-router.get('/book_request', (req, res) =>{
+router.get('/book_request/:id_usuario', (req, res) =>{
     try {   
-        let params = '';
+        const { id_usuario } = req.params;
         let query = '';
-
-        /*if(req.query['id']){
-            params += `AND ID_SOLICITUD_LIBRO = ${req.query['id']}`
-        }*/
-
-        if(req.query['id_alumno']){
-            params += ` AND slib.ID_ALUMNO = ${req.query['id_alumno']}`
-        }
 
         query = `SELECT lib.NOMBRE_LIBRO,
                         lib.ID_LIBRO,
@@ -25,10 +17,9 @@ router.get('/book_request', (req, res) =>{
                         slib.FECHA_DE_ENTREGA,
                         slib.FECHA_DE_DEVOLUCION
                 FROM solicitud_libro as slib
-                INNER JOIN libro as lib ON lib.ID_LIBRO = slib.ID_SOLICITUD_LIBRO
+                INNER JOIN libro as lib ON lib.ID_LIBRO = slib.ID_LIBRO
                 INNER JOIN estado_solicitud as es ON es.ID_ESTADO_SOLICITUD = slib.ESTADO_DE_SOLICITUD
-                WHERE 1
-                ${params}`
+                WHERE slib.ID_USUARIO = ${id_usuario}`;
 
         mysqlConnection.query(query, (err, rows) =>{
             if(!err){
@@ -43,25 +34,31 @@ router.get('/book_request', (req, res) =>{
     }
 });
 
-router.get('/book_request/count', (req, res) =>{
+router.get('/book_request/count/:id_usuario', (req, res) =>{
     try {   
-        let params = '';
+        const { id_usuario } = req.params;
         let query = '';
 
-        if(req.query['id_alumno']){
+        /*if(req.query['id_alumno']){
             params += ` AND slib.ID_ALUMNO = ${req.query['id_alumno']}`
-        }
+        }*/
 
         query = `SELECT es.DESCRIPCION as ESTADO, count(*) as CANTIDAD 
-                FROM aplaplac.solicitud_libro sl
-                JOIN aplaplac.estado_solicitud as es ON es.ID_ESTADO_SOLICITUD = sl.ESTADO_DE_SOLICITUD
-                GROUP BY ESTADO_DE_SOLICITUD
-                ${params}`;
+                FROM maltamirano.solicitud_libro as sl
+                JOIN maltamirano.estado_solicitud as es ON es.ID_ESTADO_SOLICITUD = sl.ESTADO_DE_SOLICITUD
+                WHERE ID_USUARIO = ${id_usuario}
+                GROUP BY ESTADO_DE_SOLICITUD`;
 
         mysqlConnection.query(query, (err, rows) =>{
             if(!err){
+                console.log("DATA");
                 console.log(rows);
-                res.json({'code': 200, 'count':rows.length, 'data': rows});
+                if(rows.length > 0){
+                    res.json({'code': 200, 'count':rows.length, 'data': rows});
+                }
+                else{
+                    res.json({'code': 400, 'count':rows.length});
+                }   
             }
             else{
                 res.json({'code': 400, 'error':err});
@@ -72,21 +69,28 @@ router.get('/book_request/count', (req, res) =>{
     }
 });
 
+//Insertar una solicitud de libro
 router.post('/book_request', (req, res) =>{
     try {   
         let query = '';
         console.log(req.body);
 
         const id_libro = req.body['id_libro'];
-        const id_alumno = req.body['id_alumno'];
+        const id_usuario = req.body['id_usuario'];
         const estado = 1;
 
-        query = `INSERT INTO solicitud_libro (ID_LIBRO, ID_ALUMNO, ESTADO_DE_SOLICITUD)
-                 VALUES (${id_libro},${id_alumno},${estado})`;
+        query = `INSERT INTO solicitud_libro (ID_LIBRO, ESTADO_DE_SOLICITUD, ID_USUARIO)
+                 VALUES (${id_libro},${estado},${id_usuario})`;
 
         mysqlConnection.query(query,(err, rows) =>{
             if(!err){
-                res.json({'code': 200, 'message':'ok'});
+                console.log("ROWS");
+                if(rows.affectedRows > 0){
+                    res.json({'code': 200, 'success':true, 'message':'ok'});
+                } 
+                else{
+                    res.json({'code': 400, 'success':false, 'message':'no fue posible solicitar el libro'});
+                }     
             }
             else{
                 res.json({'code': 400, 'error':err});
@@ -97,6 +101,7 @@ router.post('/book_request', (req, res) =>{
     }
 });
 
+//validacion de usuarios para solicitar libros
 router.get('/book_request/valid/:id_usuario', (req, res) =>{
     try {   
         let query = '';
@@ -121,13 +126,20 @@ router.get('/book_request/valid/:id_usuario', (req, res) =>{
     
                         mysqlConnection.query(query, (err, rows) =>{
                             if(!err){
-    
-                                if(rows[0]['ID_ESTADO_MATRICULA'] == 1){
-                                    res.json({'code': 200, 'alumno_validado': true});
+                                if(rows.length > 0){
+                                    console.log("ES ALUMNO");
+                                    console.log(rows);
+                                    if(rows[0]['ID_ESTADO_MATRICULA'] == 1){
+                                        res.json({'code': 200, 'usuario_validado': true});
+                                    }
+                                    else{
+                                        res.json({'code': 200, 'usuario_validado': false, 'msg':'falta matricula'});
+                                    }
                                 }
                                 else{
-                                    res.json({'code': 200, 'alumno_validado': false});
+                                    res.json({'code': 200, 'usuario_validado': false, 'msg':'falta registro biblioteca'})
                                 }
+                                
                             }
                         });
                     }
@@ -138,14 +150,14 @@ router.get('/book_request/valid/:id_usuario', (req, res) =>{
     
                         mysqlConnection.query(query, (err, rows) =>{
                             if(!err){
-    
+                                console.log("SI NO ES ALUMNO");
+                                console.log(rows);
                                 if(rows.length > 0){
                                     res.json({'code': 200, 'usuario_validado': true});
                                 }
                                 else{
-                                    res.json({'code': 200, 'usuario_validado': false});
-                                }
-                                            
+                                    res.json({'code': 200, 'usuario_validado': false, 'msg':'falta registro biblioteca'});
+                                }                 
                             }
                         });
                     } 
