@@ -18,7 +18,7 @@ app.use(require('../app/api/v1/book_api'));
 app.use(require('../app/api/v1/book_request_api'));
 app.use(require('../app/api/v1/login_user_api'));
 app.use(require('../app/api/v1/user_api'));
-app.use(require('../app/api/v1/library_registration'));
+app.use(require('../app/api/v1/library_registration_api'));
 
 //Iniciacion del servidor
 app.listen(app.get('port'), ()=>{
