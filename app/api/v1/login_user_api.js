@@ -5,7 +5,6 @@ const mysqlConnection = require('../../../config/database');
 //Definicion de rutas
 router.get('/valid_user/:email/:pass', (req, res) =>{
     try {   
-
         const email = req.params['email'].match(/^([^@]*)@/)[1];
         const pass = req.params['pass'];
         let query = `SELECT * FROM usuario WHERE CORREO_ELECTRONICO LIKE '%${email}%' AND CONTRASEÑA = '${pass}'`;
